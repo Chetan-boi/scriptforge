@@ -8,3 +8,10 @@ wheels/
 
 # Virtual environments
 .venv
+
+# PyCharm files
+.idea
+
+# macOS files
+.DS_Store
+.DS_Store/*
