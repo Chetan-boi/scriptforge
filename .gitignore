@@ -15,3 +15,6 @@ wheels/
 # macOS files
 .DS_Store
 .DS_Store/*
+
+# Obsidian files
+.Obsidian/*
