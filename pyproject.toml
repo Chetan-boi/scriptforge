@@ -7,7 +7,9 @@ authors = [
     { name = "Chetan-boi", email = "Chetan140209@gmail.com" }
 ]
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "rich>=15.0.0",
+]
 
 [project.scripts]
 scriptforge = "scriptforge:main"
