@@ -8,7 +8,7 @@ def main() -> None:
 
     if len(sys.argv) == 2 and sys.argv[1] in ("--help", "-h"):
         print_help()
-        sys.exit(1)
+        sys.exit()
 
     # if args invalid show usage
     if len(sys.argv) not in [4,3]:

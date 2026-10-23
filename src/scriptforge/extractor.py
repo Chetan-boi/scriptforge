@@ -11,8 +11,8 @@ def extract_glyphs(img_path: str, name: str | None = None) -> Path:
     if img is None:
         raise ValueError(f"Could not open image: {img_path}")
 
-    if name and name.strip():
-        db_path = Path(f"{name.strip()}.db")
+    if name:
+        db_path = Path(f"{name}.db")
     else:
         db_path = Path(".bin/default.db")
 

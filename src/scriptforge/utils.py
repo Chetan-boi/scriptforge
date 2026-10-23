@@ -1,4 +1,5 @@
 from .extractor import *
+from .generator import _
 
 from rich.console import Console
 
@@ -49,7 +50,7 @@ def run_menu():
                 out = input("Enter output PDF path or leave blank: ")
                 name = input("Enter whose handwriting u want it to be in: ")
                 print(f"Generating PDF: {out}")
-                # generate_pdf(text, out) 
+                generate_pdf(text, out, name) 
 
             case 3:
                 print("Exiting ScriptForge.")
