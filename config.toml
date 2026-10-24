@@ -1,0 +1,14 @@
+[page]
+size = "A4"
+char_size = 14.0
+line_spacing = 24.0
+left_margin = 54.0
+top_margin = 50.0
+bottom_margin = 40.0
+
+[colors]
+rule_line = "#B0C4DE"
+margin_line = "#E57373"
+
+[database]
+default_path = ".bin/default.db"

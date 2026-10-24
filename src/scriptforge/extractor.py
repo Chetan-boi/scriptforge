@@ -1,3 +1,7 @@
+from reportlab.lib.colors import transparent
+
+from .processor import remove_background
+
 from pathlib import Path
 import sqlite3
 import string
@@ -30,7 +34,6 @@ def extract_glyphs(img_path: str, name: str | None = None) -> Path:
         records = []
         i = 0
 
-        # not working
         for r in range(6):
             for c in range(6):
                 char = LABELS[i]
@@ -38,9 +41,8 @@ def extract_glyphs(img_path: str, name: str | None = None) -> Path:
                     r * cell_h : (r + 1) * cell_h, c * cell_w : (c + 1) * cell_w
                 ]
 
-                success, buffer = cv2.imencode(".png", crop)
-                if success:
-                    records.append((char, buffer.tobytes()))
+                transparent_bytes = remove_background(crop)
+                records.append((char, transparent_bytes))
                 i += 1
 
         conn.executemany(

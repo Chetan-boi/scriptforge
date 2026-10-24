@@ -19,6 +19,3 @@ wheels/
 # Obsidian files
 .Obsidian/*
 
-*.tiff
-*.pdf
-*.png
