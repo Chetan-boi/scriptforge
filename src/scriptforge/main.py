@@ -5,6 +5,7 @@ def main() -> None:
     # if no args run a menu driven approach
     if len(sys.argv) == 1:    # Only ran the file
         run_menu()
+        return
 
     if len(sys.argv) == 2 and sys.argv[1] in ("--help", "-h"):
         print_help()
@@ -15,9 +16,14 @@ def main() -> None:
         print_usage()
         sys.exit(1)
 
-    # there may be the following cases 
-    # the args are [sample_png] [data text] [output pdf]
-    # the args are [sample_png] [data text] 
-    # the args are [sample_sqlite] [data text] [output pdf]
-    # the args are [sample_sqlite] [data text]
-    # the args are [sample_png] [output_sqlite]
+    sample = sys.argv[1]
+    text = sys.argv[2]
+    out = sys.argv[3] if len(sys.argv) == 4 else None
+
+    if sample.endswith(".db"):
+        name = sample.removesuffix(".db")
+    else:
+        extract_glyphs(sample)
+        name = None
+
+    generate_pdf(text, out, name)

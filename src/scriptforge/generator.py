@@ -1,4 +1,4 @@
-# import io 
+import io 
 import os
 import random
 import sqlite3
@@ -8,6 +8,9 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 
+CHAR_SIZE = 12
+LINE_SPACING = 14
+
 def load_glyph(db_path) -> dict[str,Image.Image]:
     path = Path(db_path)
 
@@ -16,25 +19,23 @@ def load_glyph(db_path) -> dict[str,Image.Image]:
 
     glyphs = {}
     with sqlite3.connect(path) as conn:
-        cursor = con.cursor()
+        cursor = conn.cursor()
         cursor.execute("SELECT char, image FROM glyphs")
         for char, img_blob in cursor.fetchall():
             glyphs[char] = Image.open(io.BytesIO(img_blob))
 
     return glyphs
 
-def generate_pdf(text,output_path,name):
-    content = ""
-    if os.path.exists(text):
-        try:
-            with open(text,"r") as f:
-                content = f.read()
-        except Exception:
-            content = text
+def generate_pdf(text, output_path, name):
+    try:
+        with open(text, "r") as f:
+            text = f.read()
+    except Exception as e:
+            raise FileNotFoundError(f"{e} : {text}")
 
-    pass
-    db_file = Path(f"{name}.db") if name else Path(".bim/default.db")
+    db_file = Path(f"{name}.db") if name else Path(".bin/default.db")
     glyph_bank = load_glyph(db_file)
+
     if not output_path:
         out_file = Path("output.pdf")
     else:
@@ -50,30 +51,31 @@ def generate_pdf(text,output_path,name):
     c = canvas.Canvas(str(out_file), pagesize=A4)
 
     cursor_x = 0.0
-    cursor_y = page_height - char_size
+    cursor_y = page_height - CHAR_SIZE
 
-    for char in content:
-        # Handle explicit newlines
-        if char == "\n":
-            cursor_x = 0.0
-            cursor_y -= line_spacing
-            if cursor_y < 0:
-                c.showPage()
-                cursor_x = 0.0
-                cursor_y = page_height - char_size
+    for char in text:
+        if char == "\r":
             continue
 
-        # Wrap at the right edge without margin padding
-        if cursor_x + char_size > page_width:
+        if char == "\n":
             cursor_x = 0.0
-            cursor_y -= line_spacing
+            cursor_y -= LINE_SPACING
             if cursor_y < 0:
                 c.showPage()
                 cursor_x = 0.0
-                cursor_y = page_height - char_size
+                cursor_y = page_height - CHAR_SIZE
+            continue
+
+        if cursor_x + CHAR_SIZE > page_width:
+            cursor_x = 0.0
+            cursor_y -= LINE_SPACING
+            if cursor_y < 0:
+                c.showPage()
+                cursor_x = 0.0
+                cursor_y = page_height - CHAR_SIZE
 
         if char == " ":
-            cursor_x += char_size
+            cursor_x += CHAR_SIZE
             continue
 
         glyph = glyph_bank.get(char.lower())
@@ -82,15 +84,14 @@ def generate_pdf(text,output_path,name):
                 ImageReader(glyph),
                 cursor_x,
                 cursor_y,
-                width=char_size,
-                height=char_size,
+                width=CHAR_SIZE,
+                height=CHAR_SIZE,
             )
-            cursor_x += char_size
         else:
-            c.setFont("Helvetica", char_size)
+            c.setFont("Helvetica", CHAR_SIZE)
             c.drawString(cursor_x, cursor_y, char)
-            cursor_x += char_size
+
+        cursor_x += CHAR_SIZE
 
     c.save()
     return out_file
-

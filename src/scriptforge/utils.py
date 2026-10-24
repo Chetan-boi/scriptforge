@@ -1,5 +1,5 @@
 from .extractor import *
-from .generator import _
+from .generator import *
 
 from rich.console import Console
 
@@ -37,22 +37,22 @@ def display_menu():
 def run_menu():
     while True:
         display_menu()
-        choice = int(input("Select an option (1-3): "))
+        choice = input("Select an option (1-3): ").strip()
 
         match choice:
-            case 1:
+            case "1":
                 img_path = input("Enter handwriting image path: ")
                 name = input("Enter the name: ")
                 print(f"Extracting from: {img_path}")
                 extract_glyphs(img_path, name)
-            case 2:
-                text = input("Enter text or .txt file path: ")
+            case "2":
+                text = input("Enter .txt file path: ")
                 out = input("Enter output PDF path or leave blank: ")
                 name = input("Enter whose handwriting u want it to be in: ")
                 print(f"Generating PDF: {out}")
                 generate_pdf(text, out, name) 
 
-            case 3:
+            case "3":
                 print("Exiting ScriptForge.")
                 sys.exit(0)
 
