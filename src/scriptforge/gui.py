@@ -22,7 +22,7 @@ MARGIN = "#E57373"
 
 
 def open_file(path):
-    """Open a file in whatever app the OS uses for it."""
+
     if sys.platform == "darwin": #for macos
         subprocess.run(["open", path])
     elif sys.platform == "win32": #for windows
@@ -50,7 +50,7 @@ class App(ctk.CTk):
         self.build_sidebar()
         self.build_page()
 
-    # ---------- layout ----------
+    #layout
 
     def make_button(self, parent, text, command, primary=False):
         if primary:
@@ -128,7 +128,7 @@ class App(ctk.CTk):
         self.make_button(row, "Make PDF", self.make_pdf, primary=True).pack(side="right")
         self.open_btn = self.make_button(row, "Open PDF", self.open_last)
 
-    # ---------- button actions ----------
+    #button actions
 
     def pick_sheet(self):
         path = filedialog.askopenfilename(
@@ -180,7 +180,7 @@ class App(ctk.CTk):
         if self.last_pdf:
             open_file(self.last_pdf)
 
-    # ---------- when the engine finishes ----------
+
 
     def sheet_done(self, path):
         self.profile = None  
