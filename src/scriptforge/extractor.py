@@ -1,11 +1,10 @@
-from reportlab.lib.colors import transparent
-
-from .processor import remove_background
-
 from pathlib import Path
 import sqlite3
 import string
 import cv2
+
+from .config import load_config
+from .processor import remove_background
 
 LABELS = list(string.ascii_lowercase) + [str(i) for i in range(10)]
 
@@ -16,9 +15,11 @@ def extract_glyphs(img_path: str, name: str | None = None) -> Path:
         raise ValueError(f"Could not open image: {img_path}")
 
     if name:
-        db_path = Path(f"{name}.db")
+        db_path = Path(name if name.endswith(".db") else f"{name}.db")
     else:
-        db_path = Path(".bin/default.db")
+        cfg = load_config()
+        default_db = cfg.get("database", {}).get("default_path", ".bin/default.db")
+        db_path = Path(default_db)
 
     db_path.parent.mkdir(parents=True, exist_ok=True)
 

@@ -3,12 +3,22 @@ size = "A4"
 char_size = 14.0
 line_spacing = 24.0
 left_margin = 54.0
+right_margin = 20.0
 top_margin = 50.0
 bottom_margin = 40.0
+margin_indent = 8.0
+space_width_factor = 0.75
+show_rules = true
+show_margin = true
+rule_line_width = 0.6
+margin_line_width = 1.0
 
 [colors]
 rule_line = "#B0C4DE"
 margin_line = "#E57373"
+desk = "#E6EAF0"
+paper = "#FCFCFD"
+ink = "#1D2B4F"
 
 [database]
 default_path = ".bin/default.db"
