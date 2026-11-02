@@ -3,13 +3,13 @@ import sqlite3
 from pathlib import Path
 from PIL import Image
 from reportlab.lib.colors import HexColor
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, letter
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
 from .config import load_config
 
-# Load TOML settings
+# Load default TOML settings at module level for compatibility
 CFG = load_config()
 CHAR_SIZE = float(CFG["page"]["char_size"])
 LINE_SPACING = float(CFG["page"]["line_spacing"])
@@ -22,19 +22,38 @@ MARGIN_COLOR = HexColor(CFG["colors"]["margin_line"])
 DEFAULT_DB = CFG["database"]["default_path"]
 
 
-def draw_notebook_ruling(c: canvas.Canvas, page_width, page_height) -> None:
+def draw_notebook_ruling(c: canvas.Canvas, page_width, page_height, cfg: dict | None = None) -> None:
+    if cfg is None:
+        cfg = load_config()
+    page_cfg = cfg.get("page", {})
+    colors_cfg = cfg.get("colors", {})
+
+    top_margin = float(page_cfg.get("top_margin", 50.0))
+    bottom_margin = float(page_cfg.get("bottom_margin", 40.0))
+    line_spacing = float(page_cfg.get("line_spacing", 24.0))
+    left_margin = float(page_cfg.get("left_margin", 54.0))
+    show_rules = bool(page_cfg.get("show_rules", True))
+    show_margin = bool(page_cfg.get("show_margin", True))
+    rule_width = float(page_cfg.get("rule_line_width", 0.6))
+    margin_width = float(page_cfg.get("margin_line_width", 1.0))
+
+    rule_color = HexColor(colors_cfg.get("rule_line", "#B0C4DE"))
+    margin_color = HexColor(colors_cfg.get("margin_line", "#E57373"))
+
     c.saveState()
 
-    c.setStrokeColor(RULE_COLOR)
-    c.setLineWidth(0.6)
-    y = page_height - TOP_MARGIN
-    while y >= BOTTOM_MARGIN:
-        c.line(0, y, page_width, y)
-        y -= LINE_SPACING
+    if show_rules:
+        c.setStrokeColor(rule_color)
+        c.setLineWidth(rule_width)
+        y = page_height - top_margin
+        while y >= bottom_margin:
+            c.line(0, y, page_width, y)
+            y -= line_spacing
 
-    c.setStrokeColor(MARGIN_COLOR)
-    c.setLineWidth(1.0)
-    c.line(LEFT_MARGIN, 0, LEFT_MARGIN, page_height)
+    if show_margin:
+        c.setStrokeColor(margin_color)
+        c.setLineWidth(margin_width)
+        c.line(left_margin, 0, left_margin, page_height)
 
     c.restoreState()
 
@@ -54,15 +73,37 @@ def load_glyph(db_path) -> dict[str, Image.Image]:
     return glyphs
 
 
-def generate_pdf(text, output_path: str | None = None, name: str | None = None) -> Path:
+def generate_pdf(
+    text,
+    output_path: str | None = None,
+    name: str | None = None,
+    cfg: dict | None = None,
+) -> Path:
+    if cfg is None:
+        cfg = load_config()
+
+    page_cfg = cfg.get("page", {})
+    char_size = float(page_cfg.get("char_size", 14.0))
+    line_spacing = float(page_cfg.get("line_spacing", 24.0))
+    left_margin = float(page_cfg.get("left_margin", 54.0))
+    right_margin = float(page_cfg.get("right_margin", 20.0))
+    top_margin = float(page_cfg.get("top_margin", 50.0))
+    bottom_margin = float(page_cfg.get("bottom_margin", 40.0))
+    margin_indent = float(page_cfg.get("margin_indent", 8.0))
+    space_factor = float(page_cfg.get("space_width_factor", 0.75))
+    default_db = cfg.get("database", {}).get("default_path", ".bin/default.db")
+
     path_obj = Path(text)
     try:
         with open(path_obj, "r", encoding="utf-8") as f:
             content = f.read()
     except Exception as e:
-            raise FileNotFoundError(f"{e} : {text}")
+        raise FileNotFoundError(f"{e} : {text}")
 
-    db_file = Path(f"{name}.db") if name else Path(DEFAULT_DB)
+    if name:
+        db_file = Path(name if name.endswith(".db") else f"{name}.db")
+    else:
+        db_file = Path(default_db)
     glyph_bank = load_glyph(db_file)
 
     if not output_path:
@@ -76,14 +117,16 @@ def generate_pdf(text, output_path: str | None = None, name: str | None = None) 
 
     out_file.parent.mkdir(parents=True, exist_ok=True)
 
-    page_width, page_height = A4
-    c = canvas.Canvas(str(out_file), pagesize=A4)
+    page_size_name = str(page_cfg.get("size", "A4")).upper()
+    pagesize = letter if page_size_name == "LETTER" else A4
+    page_width, page_height = pagesize
+    c = canvas.Canvas(str(out_file), pagesize=pagesize)
 
-    draw_notebook_ruling(c, page_width, page_height)
+    draw_notebook_ruling(c, page_width, page_height, cfg)
 
-    text_start_x = LEFT_MARGIN + 8.0
+    text_start_x = left_margin + margin_indent
     cursor_x = text_start_x
-    cursor_y = page_height - TOP_MARGIN
+    cursor_y = page_height - top_margin
 
     for char in content:
         if char == "\r":
@@ -91,25 +134,25 @@ def generate_pdf(text, output_path: str | None = None, name: str | None = None) 
 
         if char == "\n":
             cursor_x = text_start_x
-            cursor_y -= LINE_SPACING
-            if cursor_y < BOTTOM_MARGIN:
+            cursor_y -= line_spacing
+            if cursor_y < bottom_margin:
                 c.showPage()
-                draw_notebook_ruling(c, page_width, page_height)
+                draw_notebook_ruling(c, page_width, page_height, cfg)
                 cursor_x = text_start_x
-                cursor_y = page_height - TOP_MARGIN
+                cursor_y = page_height - top_margin
             continue
 
-        if cursor_x + CHAR_SIZE > page_width - 20:
+        if cursor_x + char_size > page_width - right_margin:
             cursor_x = text_start_x
-            cursor_y -= LINE_SPACING
-            if cursor_y < BOTTOM_MARGIN:
+            cursor_y -= line_spacing
+            if cursor_y < bottom_margin:
                 c.showPage()
-                draw_notebook_ruling(c, page_width, page_height)
+                draw_notebook_ruling(c, page_width, page_height, cfg)
                 cursor_x = text_start_x
-                cursor_y = page_height - TOP_MARGIN
+                cursor_y = page_height - top_margin
 
         if char == " ":
-            cursor_x += CHAR_SIZE * 0.75
+            cursor_x += char_size * space_factor
             continue
 
         glyph = glyph_bank.get(char.lower())
@@ -118,15 +161,15 @@ def generate_pdf(text, output_path: str | None = None, name: str | None = None) 
                 ImageReader(glyph),
                 cursor_x,
                 cursor_y,
-                width=CHAR_SIZE,
-                height=CHAR_SIZE,
+                width=char_size,
+                height=char_size,
                 mask="auto",
             )
         else:
-            c.setFont("Helvetica", CHAR_SIZE)
+            c.setFont("Helvetica", char_size)
             c.drawString(cursor_x, cursor_y, char)
 
-        cursor_x += CHAR_SIZE
+        cursor_x += char_size
 
     c.save()
     return out_file
