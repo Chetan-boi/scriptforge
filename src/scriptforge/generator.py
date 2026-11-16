@@ -1,13 +1,14 @@
 import io
-import sqlite3
 from pathlib import Path
+import sqlite3
+import sys
 from PIL import Image
 from reportlab.lib.colors import HexColor
 from reportlab.lib.pagesizes import A4, letter
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
-from .config import load_config
+from .config import get_user_data_dir, load_config
 
 # Load default TOML settings at module level for compatibility
 CFG = load_config()
@@ -103,7 +104,10 @@ def generate_pdf(
     if name:
         db_file = Path(name if name.endswith(".db") else f"{name}.db")
     else:
-        db_file = Path(default_db)
+        if getattr(sys, "frozen", False) and not Path(default_db).is_absolute():
+            db_file = get_user_data_dir() / default_db
+        else:
+            db_file = Path(default_db)
     glyph_bank = load_glyph(db_file)
 
     if not output_path:

@@ -1,9 +1,10 @@
 from pathlib import Path
 import sqlite3
 import string
+import sys
 import cv2
 
-from .config import load_config
+from .config import get_user_data_dir, load_config
 from .processor import remove_background
 
 LABELS = list(string.ascii_lowercase) + [str(i) for i in range(10)]
@@ -19,7 +20,10 @@ def extract_glyphs(img_path: str, name: str | None = None) -> Path:
     else:
         cfg = load_config()
         default_db = cfg.get("database", {}).get("default_path", ".bin/default.db")
-        db_path = Path(default_db)
+        if getattr(sys, "frozen", False) and not Path(default_db).is_absolute():
+            db_path = get_user_data_dir() / default_db
+        else:
+            db_path = Path(default_db)
 
     db_path.parent.mkdir(parents=True, exist_ok=True)
 

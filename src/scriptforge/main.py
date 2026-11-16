@@ -1,10 +1,18 @@
 import sys
 from pathlib import Path
-from .utils import extract_glyphs, generate_pdf, print_help, print_usage, run_menu
+
+# Handle direct script execution vs package module import
+if __package__ is None or __package__ == "":
+    src_dir = Path(__file__).resolve().parent.parent
+    if str(src_dir) not in sys.path:
+        sys.path.insert(0, str(src_dir))
+    from scriptforge.utils import extract_glyphs, generate_pdf, print_help, print_usage, run_menu
+else:
+    from .utils import extract_glyphs, generate_pdf, print_help, print_usage, run_menu
 
 
 def cli() -> None:
-    """CLI entry point for ScriptForge."""
+    """CLI entry point"""
     # if no args run a menu driven approach
     if len(sys.argv) == 1:
         run_menu()
@@ -33,17 +41,19 @@ def cli() -> None:
 
 
 def gui_direct() -> None:
-    """Direct GUI launcher without checking --cli flag."""
-    from .gui import main as gui_main
+    """Direct GUI launcher."""
+    if __package__ is None or __package__ == "":
+        from scriptforge.gui import main as gui_main
+    else:
+        from .gui import main as gui_main
     gui_main()
 
 
 def main() -> None:
-    """Default entry point: launches GUI, or CLI if invoked as scriptforge-cli / with --cli."""
+    """Default entry point."""
     # When packaged as a standalone PyInstaller app, skip CLI entirely
     if getattr(sys, "frozen", False):
-        from .gui import main as gui_main
-        gui_main()
+        gui_direct()
         return
 
     # Check if invoked as CLI command or explicitly with --cli flag
@@ -55,8 +65,7 @@ def main() -> None:
         return
 
     print("Running Default mode : GUI")
-    from .gui import main as gui_main
-    gui_main()
+    gui_direct()
 
 
 if __name__ == "__main__":

@@ -1,5 +1,7 @@
 import copy
+import os
 from pathlib import Path
+import sys
 from typing import Any
 import tomllib
 
@@ -32,12 +34,34 @@ DEFAULT_CONFIG: dict[str, Any] = {
 }
 
 
+def get_user_data_dir() -> Path:
+    if sys.platform == "darwin":
+        path = Path.home() / "Library" / "Application Support" / "ScriptForge"
+    elif sys.platform == "win32":
+        path = Path(os.environ.get("APPDATA", Path.home())) / "ScriptForge"
+    else:
+        path = Path.home() / ".config" / "ScriptForge"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
 def get_config_path(override_path: Path | str | None = None) -> Path:
     if override_path:
         return Path(override_path)
     cwd_cfg = Path("config.toml")
     if cwd_cfg.exists():
         return cwd_cfg
+    if getattr(sys, "frozen", False):
+        user_cfg = get_user_data_dir() / "config.toml"
+        if user_cfg.exists():
+            return user_cfg
+        if hasattr(sys, "_MEIPASS"):
+            meipass_cfg = Path(sys._MEIPASS) / "config.toml"
+            if meipass_cfg.exists():
+                return meipass_cfg
+        res_cfg = Path(sys.executable).parent.parent / "Resources" / "config.toml"
+        if res_cfg.exists():
+            return res_cfg
     root_cfg = Path(__file__).resolve().parent.parent.parent / "config.toml"
     if root_cfg.exists():
         return root_cfg
@@ -99,7 +123,12 @@ def dump_toml(data: dict[str, Any]) -> str:
 
 
 def save_config(config_data: dict[str, Any], config_path: Path | str | None = None) -> Path:
-    path = get_config_path(config_path)
+    if config_path:
+        path = Path(config_path)
+    elif getattr(sys, "frozen", False):
+        path = get_user_data_dir() / "config.toml"
+    else:
+        path = get_config_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     toml_str = dump_toml(config_data)
     path.write_text(toml_str, encoding="utf-8")
